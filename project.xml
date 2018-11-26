@@ -1,0 +1,17 @@
+<project
+    name = "graphs"
+    description = "graph search example"
+    script = "zproject.gsl"
+    email = "tomas@halman.net"
+    >
+
+
+    <include filename = "license.xml" />
+    <version major = "1" minor = "0" patch = "0" />
+    <abi current = "1" revision = "0" age = "0" />
+
+    <use project = "czmq" />
+
+    <class name = "matrix">Matrix</class>
+    <main name = "graphs">test graph search</main>
+</project>
