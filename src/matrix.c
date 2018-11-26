@@ -61,6 +61,15 @@ matrix_set (matrix_t *self, unsigned int x, unsigned int y, void *element)
 }
 
 //  --------------------------------------------------------------------------
+//  set int element
+void
+matrix_set_int (matrix_t *self, unsigned int x, unsigned int y, int element)
+{
+    if (self->element_size != sizeof (int)) return;
+    matrix_set (self, x, y, &element);
+}
+
+//  --------------------------------------------------------------------------
 //  get element
 
 void *
@@ -69,6 +78,16 @@ matrix_get (matrix_t *self, unsigned int x, unsigned int y)
     if (!self || x >= self->x || y >= self->y) return NULL;
     uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
     return dest;
+}
+
+
+//  --------------------------------------------------------------------------
+//  get int element
+int
+matrix_get_int (matrix_t *self, unsigned int x, unsigned int y)
+{
+    if (self->element_size != sizeof (int)) return 0;
+    return *(int *) matrix_get (self, x, y);
 }
 
 //  --------------------------------------------------------------------------
@@ -117,6 +136,10 @@ matrix_test (bool verbose)
     assert (x == 0);
     x = *(int *)matrix_get (self, 0, 1);
     assert (x == 5);
+
+    matrix_set_int (self, 0, 0, -3);
+    assert (matrix_get_int (self, 0, 0) == -3);
+
     matrix_destroy (&self);
     //  @end
     printf ("OK\n");
