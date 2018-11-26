@@ -39,6 +39,14 @@ GRAPHS_EXPORT void *
 GRAPHS_EXPORT int
     matrix_get_int (matrix_t *self, unsigned int x, unsigned int y);
 
+//  Get matrix width
+int
+    matrix_x (matrix_t *self);
+
+//  Get matrix height
+int
+    matrix_y (matrix_t *self);
+
 //  Destroy the matrix
 GRAPHS_EXPORT void
     matrix_destroy (matrix_t **self_p);

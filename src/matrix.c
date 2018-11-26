@@ -91,6 +91,22 @@ matrix_get_int (matrix_t *self, unsigned int x, unsigned int y)
 }
 
 //  --------------------------------------------------------------------------
+//  Get matrix width
+int
+matrix_x (matrix_t *self) {
+    if (!self) return 0;
+    return self->x;
+}
+
+//  --------------------------------------------------------------------------
+//  Get matrix height
+int
+matrix_y (matrix_t *self) {
+    if (!self) return 0;
+    return self->y;
+}
+
+//  --------------------------------------------------------------------------
 //  Destroy the matrix
 
 void
@@ -130,6 +146,8 @@ matrix_test (bool verbose)
     //  Simple create/destroy test
     matrix_t *self = matrix_new (5, 3, sizeof(int));
     assert (self);
+    assert (matrix_x (self) == 5);
+    assert (matrix_y (self) == 3);
     int x = 5;
     matrix_set (self, 0, 1, &x);
     x = *(int *)matrix_get (self, 0, 2);
