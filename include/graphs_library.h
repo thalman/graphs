@@ -71,12 +71,15 @@
 #ifdef GRAPHS_BUILD_DRAFT_API
 typedef struct _matrix_t matrix_t;
 #define MATRIX_T_DEFINED
+typedef struct _dijkstra_t dijkstra_t;
+#define DIJKSTRA_T_DEFINED
 #endif // GRAPHS_BUILD_DRAFT_API
 
 
 //  Public classes, each with its own header file
 #ifdef GRAPHS_BUILD_DRAFT_API
 #include "matrix.h"
+#include "dijkstra.h"
 #endif // GRAPHS_BUILD_DRAFT_API
 
 #ifdef GRAPHS_BUILD_DRAFT_API

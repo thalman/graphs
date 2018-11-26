@@ -37,6 +37,7 @@ all_tests [] = {
 #ifdef GRAPHS_BUILD_DRAFT_API
 // Tests for draft public classes:
     { "matrix", matrix_test, false, true, NULL },
+    { "dijkstra", dijkstra_test, false, true, NULL },
 #endif // GRAPHS_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };

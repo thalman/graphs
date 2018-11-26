@@ -13,6 +13,8 @@
 # Ignore the source doc texts generated from program sources
 matrix.txt
 matrix.doc
+dijkstra.txt
+dijkstra.doc
 graphs.txt
 graphs.doc
 

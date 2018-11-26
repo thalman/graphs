@@ -13,5 +13,6 @@
     <use project = "czmq" />
 
     <class name = "matrix">Matrix</class>
+    <actor name = "dijkstra">Dijkstra method</actor>
     <main name = "graphs">test graph search</main>
 </project>

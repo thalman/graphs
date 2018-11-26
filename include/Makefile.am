@@ -8,7 +8,8 @@ include_HEADERS = \
 
 if ENABLE_DRAFTS
 include_HEADERS += \
-    matrix.h
+    matrix.h \
+    dijkstra.h
 
 endif
 

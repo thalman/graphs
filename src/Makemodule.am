@@ -17,7 +17,8 @@ src_libgraphs_la_SOURCES = \
 
 if ENABLE_DRAFTS
 src_libgraphs_la_SOURCES += \
-    src/matrix.c
+    src/matrix.c \
+    src/dijkstra.c
 
 endif
 
