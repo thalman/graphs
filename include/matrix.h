@@ -21,7 +21,15 @@ extern "C" {
 //  @interface
 //  Create a new matrix
 GRAPHS_EXPORT matrix_t *
-    matrix_new (void);
+    matrix_new (unsigned int x, unsigned int y, size_t element_size);
+
+//  get element
+GRAPHS_EXPORT void
+    matrix_set (matrix_t *self, unsigned int x, unsigned int y, void *element);
+
+//  get element
+GRAPHS_EXPORT void *
+    matrix_get (matrix_t *self, unsigned int x, unsigned int y);
 
 //  Destroy the matrix
 GRAPHS_EXPORT void

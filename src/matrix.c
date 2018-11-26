@@ -23,7 +23,10 @@
 //  Structure of our class
 
 struct _matrix_t {
-    int filler;     //  Declare class properties here
+    unsigned int x;
+    unsigned int y;
+    size_t element_size;
+    uint8_t *elements;
 };
 
 
@@ -31,14 +34,42 @@ struct _matrix_t {
 //  Create a new matrix
 
 matrix_t *
-matrix_new (void)
+matrix_new (unsigned int x, unsigned int y, size_t element_size)
 {
+    if (!x || !y || !element_size) return NULL;
+
     matrix_t *self = (matrix_t *) zmalloc (sizeof (matrix_t));
     assert (self);
-    //  Initialize class properties here
+    self->x = x;
+    self->y = y;
+    self->element_size = element_size;
+    self->elements = (uint8_t *) zmalloc (self->x * self->y * self->element_size);
+    assert (self->elements);
     return self;
 }
 
+
+//  --------------------------------------------------------------------------
+//  set element
+
+void
+matrix_set (matrix_t *self, unsigned int x, unsigned int y, void *element)
+{
+    if (!self || x >= self->x || y >= self->y || !element) return;
+    uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
+    memcpy (dest, element, self->element_size);
+}
+
+//  --------------------------------------------------------------------------
+//  get element
+
+void *
+matrix_get (matrix_t *self, unsigned int x, unsigned int y)
+{
+    if (!self || x >= self->x || y >= self->y) return NULL;
+    uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
+    return dest;
+}
 
 //  --------------------------------------------------------------------------
 //  Destroy the matrix
@@ -49,8 +80,7 @@ matrix_destroy (matrix_t **self_p)
     assert (self_p);
     if (*self_p) {
         matrix_t *self = *self_p;
-        //  Free class properties here
-        //  Free object itself
+        if (self->elements) free (self->elements);
         free (self);
         *self_p = NULL;
     }
@@ -79,8 +109,14 @@ matrix_test (bool verbose)
 
     //  @selftest
     //  Simple create/destroy test
-    matrix_t *self = matrix_new ();
+    matrix_t *self = matrix_new (5, 3, sizeof(int));
     assert (self);
+    int x = 5;
+    matrix_set (self, 0, 1, &x);
+    x = *(int *)matrix_get (self, 0, 2);
+    assert (x == 0);
+    x = *(int *)matrix_get (self, 0, 1);
+    assert (x == 5);
     matrix_destroy (&self);
     //  @end
     printf ("OK\n");
