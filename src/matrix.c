@@ -60,7 +60,7 @@ matrix_set (matrix_t *self, unsigned int x, unsigned int y, void *element)
 {
     if (!self || x >= self->x || y >= self->y || !element) return;
     pthread_mutex_lock (&self->mutex);
-    uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
+    uint8_t *dest = &(self->elements [(self->x * y + x) * self->element_size]);
     memcpy (dest, element, self->element_size);
     pthread_mutex_unlock (&self->mutex);
 }
@@ -77,24 +77,39 @@ matrix_set_int (matrix_t *self, unsigned int x, unsigned int y, int element)
 //  --------------------------------------------------------------------------
 //  get element
 
+void
+matrix (matrix_t *self, unsigned int x, unsigned int y, void *dest)
+{
+    if (!self || x >= self->x || y >= self->y || !dest) return;
+    pthread_mutex_lock (&self->mutex);
+    void *element = matrix_get_ptr (self, x, y);
+    if (element) {
+        memcpy (dest, element, self->element_size);
+    }
+    pthread_mutex_unlock (&self->mutex);
+}
+
+//  --------------------------------------------------------------------------
+//  get element
+
 void *
-matrix_get (matrix_t *self, unsigned int x, unsigned int y)
+matrix_get_ptr (matrix_t *self, unsigned int x, unsigned int y)
 {
     if (!self || x >= self->x || y >= self->y) return NULL;
-    pthread_mutex_lock (&self->mutex);
-    uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
-    pthread_mutex_unlock (&self->mutex);
-    return dest;
+    uint8_t *element = &(self->elements [(self->x * y + x) * self->element_size]);
+    return (void *)element;
 }
 
 
 //  --------------------------------------------------------------------------
 //  get int element
 int
-matrix_get_int (matrix_t *self, unsigned int x, unsigned int y)
+matrix_as_int (matrix_t *self, unsigned int x, unsigned int y)
 {
     if (self->element_size != sizeof (int)) return 0;
-    return *(int *) matrix_get (self, x, y);
+    int result;
+    matrix (self, x, y, &result);
+    return result;
 }
 
 //  --------------------------------------------------------------------------
@@ -129,6 +144,51 @@ matrix_destroy (matrix_t **self_p)
     }
 }
 
+zchunk_t *
+matrix_as_chunk (matrix_t *self)
+{
+    zchunk_t *chunk = zchunk_new (&(self->x), sizeof (unsigned int));
+    zchunk_extend (chunk, &(self->y), sizeof (unsigned int));
+    zchunk_extend (chunk, &(self->element_size), sizeof (size_t));
+    zchunk_extend (chunk, self->elements, self->x * self->y * self->element_size);
+    return chunk;
+}
+
+matrix_t *
+matrix_from_chunk (zchunk_t **chunk_ptr)
+{
+    if (! chunk_ptr || ! *chunk_ptr) return NULL;
+
+    zchunk_t *chunk = *chunk_ptr;
+    unsigned int x, y;
+    size_t element_size;
+    byte *data = zchunk_data (chunk);
+    memcpy (&x, &data[0], sizeof (unsigned int));
+    memcpy (&y, &data[sizeof (unsigned int)], sizeof (unsigned int));
+    memcpy (&element_size, &data[2*sizeof (unsigned int)], sizeof (size_t));
+
+    matrix_t *result = matrix_new (x, y, element_size);
+    if (result) {
+        memcpy (result->elements, &data[2*sizeof (unsigned int) + sizeof (size_t)], x * y * element_size);
+    }
+    zchunk_destroy (chunk_ptr);
+    return result;
+}
+
+void matrix_print_int (matrix_t *self)
+{
+    if (!self || self->element_size != sizeof (int)) return;
+
+    printf ("\n---\n");
+    for (int y = 0; y < self->y; y++) {
+        for (int x = 0; x < self->x; x++) {
+            printf ("%i\t", matrix_as_int (self, x, y));
+        }
+        printf ("\n");
+    }
+    printf ("---\n");
+}
+
 //  --------------------------------------------------------------------------
 //  Self test of this class
 
@@ -158,14 +218,24 @@ matrix_test (bool verbose)
     assert (matrix_y (self) == 3);
     int x = 5;
     matrix_set (self, 0, 1, &x);
-    x = *(int *)matrix_get (self, 0, 2);
+    matrix (self, 0, 2, &x);
     assert (x == 0);
-    x = *(int *)matrix_get (self, 0, 1);
+    matrix (self, 0, 1, &x);
     assert (x == 5);
 
     matrix_set_int (self, 0, 0, -3);
-    assert (matrix_get_int (self, 0, 0) == -3);
+    assert (matrix_as_int (self, 0, 0) == -3);
 
+    zchunk_t *chunk = matrix_as_chunk (self);
+    matrix_t *copy = matrix_from_chunk (&chunk);
+    for (int y = 0; y < matrix_y (self); y++) {
+        for (int x = 0; x < matrix_x (self); x++) {
+            assert (matrix_as_int (self, x, y) == matrix_as_int (copy, x, y));
+        }
+    }
+    //matrix_print_int (self);
+    //matrix_print_int (copy);
+    matrix_destroy (&copy);
     matrix_destroy (&self);
     //  @end
     printf ("OK\n");
