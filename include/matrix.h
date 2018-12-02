@@ -64,9 +64,10 @@ GRAPHS_EXPORT void
 
 #define vector_new(X,E) matrix_new(X, 1, E)
 #define vector_destroy(S) matrix_destroy(S)
+#define vector_get_ptr(S,X) matrix_get_ptr(S,X,0)
 #define vector_as_int(S,X) matrix_as_int(S,X,0)
 #define vector_set_int(S,X,V) matrix_set_int(S,X,0,V)
-
+#define vector_set(S,X,V) matrix_set(S,X,0,V);
 //  Destroy the matrix
 GRAPHS_EXPORT void
     matrix_destroy (matrix_t **self_p);

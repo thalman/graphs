@@ -20,6 +20,7 @@
 
 #include "graphs_classes.h"
 
+
 //  Structure of our actor
 
 struct _dijkstra_t {
@@ -67,6 +68,79 @@ dijkstra_destroy (dijkstra_t **self_p)
     }
 }
 
+static void add_to_queue (matrix_t *queue, int *len, int value)
+{
+    for (int i = 0; i < *len; i++) {
+        if (vector_as_int (queue, i) == value) return;
+    }
+    *len += 1;
+    vector_set_int (queue, *len, value);
+}
+
+static int pop_from_queue (matrix_t *queue, int *len, int idx)
+{
+    int result = matrix_as_int (queue, idx, 0);
+    if (idx < matrix_x (queue) - 1) {
+        for (int i = idx; i < *len; ++i) {
+            vector_set_int (queue, i, vector_as_int (queue, i + 1));
+        }
+    }
+    *len -= 1;
+    return result;
+}
+
+matrix_t *
+dijkstra_find_path (dijkstra_t *self, int from)
+{
+    int number_of_nodes = matrix_x (self->distances);
+    matrix_t *node_visited = vector_new (number_of_nodes, sizeof (int));
+    matrix_t *queue = vector_new (number_of_nodes, sizeof (int));
+    int queue_len = 0;
+    matrix_t *result = vector_new (number_of_nodes, sizeof (dnode_t));
+    // matrix_t *result = dijkstra_init_result (self, from);
+
+    for (int i = 0; i < number_of_nodes; ++i) {
+        dnode_t n = {
+            .parent = -1,
+            .distance = (i == from ? 0 : INT_MAX)
+        };
+        vector_set (result, i, &n);
+    }
+    add_to_queue (queue, &queue_len, from);
+
+    while (queue_len) {
+        int min_dist = INT_MAX;
+        int node = -1;
+        int node_queue_idx = -1;
+        // find nearest node in queue
+        for(int i = 0; i < queue_len; i++) {
+            int qnode = vector_as_int (queue, i);
+            dnode_t *curr_dist = (dnode_t *) vector_get_ptr (result, qnode);
+            zsys_debug ("checking node %i - %i", qnode, curr_dist->distance);
+            if (curr_dist->distance  < min_dist) {
+                min_dist = curr_dist->distance;
+                node = qnode;
+                node_queue_idx = i;
+            }
+        }
+        if (node != -1) {
+            // remove selected node from queue
+            pop_from_queue (queue, &queue_len, node_queue_idx);
+            vector_set_int (node_visited, node, 1);
+        }
+        zsys_debug ("node %i", node);
+        for (int i = 0; i < number_of_nodes; i++) {
+            if (!vector_as_int (node_visited, i)) {
+
+            }
+        }
+        zsys_debug ("queue_len %i", queue_len);
+    }
+    vector_destroy (&node_visited);
+    vector_destroy (&queue);
+
+    return result;
+}
 
 //  Start this actor. Return a value greater or equal to zero if initialization
 //  was successful. Otherwise -1.
@@ -118,11 +192,15 @@ dijkstra_recv_api (dijkstra_t *self)
     else
     if (streq (command, "TASK")) {
         char *from = zmsg_popstr (request);
-        char *to = zmsg_popstr (request);
         self->from = atoi (from);
-        self->to = atoi (to);
         zstr_free (&from);
-        zstr_free (&to);
+        matrix_t *result = dijkstra_find_path (self, self->from);
+        zchunk_t *chunk = matrix_as_chunk (result);
+        zframe_t *frame = zchunk_pack (chunk);
+        zstr_sendm (self->pipe, "DONE");
+        zframe_send (&frame, self->pipe, 0);
+        zchunk_destroy (&chunk);
+        matrix_destroy (&result);
     } else
     if (streq (command, "$TERM"))
         //  The $TERM command is send by zactor_destroy() method
@@ -153,7 +231,7 @@ dijkstra_actor (zsock_t *pipe, void *args)
         zsock_t *which = (zsock_t *) zpoller_wait (self->poller, 0);
         if (which == self->pipe)
             dijkstra_recv_api (self);
-       //  Add other sockets when you need them.
+        //  Add other sockets when you need them.
     }
     dijkstra_destroy (&self);
 }
@@ -194,9 +272,21 @@ dijkstra_test (bool verbose)
                 matrix_set_int (d, y, x, x);
             }
         }
+        matrix_print_int (d);
         zactor_t *dijkstra = zactor_new (dijkstra_actor, d);
-        zstr_sendx (dijkstra, "TASK", "0", "3", NULL);
         assert (dijkstra);
+        zstr_sendx (dijkstra, "TASK", "0", NULL);
+        zmsg_t *msg = zmsg_recv (dijkstra);
+        char *str = zmsg_popstr (msg);
+        assert (streq (str, "DONE"));
+        zstr_free (&str);
+        zframe_t *frame = zmsg_pop (msg);
+        zchunk_t *chunk = zchunk_unpack (frame);
+        zframe_destroy (&frame);
+        matrix_t *result = matrix_from_chunk (&chunk);
+        matrix_print_int (result);
+        matrix_destroy (&result);
+        zmsg_destroy (&msg);
         zactor_destroy (&dijkstra);
         matrix_destroy (&d);
     }

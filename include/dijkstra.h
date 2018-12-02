@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-
 //  @interface
 //  Create new dijkstra actor instance.
 //  @TODO: Describe the purpose of this actor!
@@ -48,6 +47,12 @@ GRAPHS_EXPORT void
 //  Self test of this actor
 GRAPHS_EXPORT void
     dijkstra_test (bool verbose);
+
+typedef struct _dnode_t {
+    int parent;
+    int distance;
+} dnode_t;
+
 //  @end
 
 #ifdef __cplusplus
