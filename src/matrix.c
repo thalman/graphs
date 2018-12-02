@@ -25,6 +25,7 @@
 struct _matrix_t {
     unsigned int x;
     unsigned int y;
+    pthread_mutex_t mutex;
     size_t element_size;
     uint8_t *elements;
 };
@@ -45,6 +46,8 @@ matrix_new (unsigned int x, unsigned int y, size_t element_size)
     self->element_size = element_size;
     self->elements = (uint8_t *) zmalloc (self->x * self->y * self->element_size);
     assert (self->elements);
+    int res = pthread_mutex_init (&self->mutex, NULL);
+    assert (res == 0);
     return self;
 }
 
@@ -56,8 +59,10 @@ void
 matrix_set (matrix_t *self, unsigned int x, unsigned int y, void *element)
 {
     if (!self || x >= self->x || y >= self->y || !element) return;
+    pthread_mutex_lock (&self->mutex);
     uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
     memcpy (dest, element, self->element_size);
+    pthread_mutex_unlock (&self->mutex);
 }
 
 //  --------------------------------------------------------------------------
@@ -76,7 +81,9 @@ void *
 matrix_get (matrix_t *self, unsigned int x, unsigned int y)
 {
     if (!self || x >= self->x || y >= self->y) return NULL;
+    pthread_mutex_lock (&self->mutex);
     uint8_t *dest = &(self->elements [(self->x * y + y) * self->element_size]);
+    pthread_mutex_unlock (&self->mutex);
     return dest;
 }
 
@@ -116,6 +123,7 @@ matrix_destroy (matrix_t **self_p)
     if (*self_p) {
         matrix_t *self = *self_p;
         if (self->elements) free (self->elements);
+        pthread_mutex_destroy (&self->mutex);
         free (self);
         *self_p = NULL;
     }
